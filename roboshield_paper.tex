@@ -33,7 +33,7 @@ Modern autonomous mobile robots (AMRs) and industrial manipulators rely on ROS 2
 
 By default, RTPS operates on a trust-by-default model. Any node can join the network, discover active publishers, and inject messages onto sensitive control topics like \texttt{/cmd\_vel}. Cryptographic solutions like SROS2 (DDS-Security) address this but impose substantial execution latency and setup complexity, which can destabilize low-latency, real-time control loops running at frequencies above 100 Hz.
 
-To bridge this gap, we introduce \textbf{RoboShield}, a system-level security watchdog implemented in Rust. Operating on a dedicated network hardware appliance (such as a dual-ethernet NanoPi R2S), RoboShield acts as an out-of-band intrusion detector and inline packet-level firewall.
+To bridge this gap, we introduce \textbf{RoboShield}, a system-level security watchdog implemented in Rust. Operating on a dedicated network hardware appliance (such as a dual-ethernet NanoPi R2S), RoboShield acts as an out-of-band intrusion detection system (IDS) and passive watchdog.
 
 \section{Threat Model \& Vulnerabilities}
 RoboShield protects against three major RTPS-specific threat vectors:

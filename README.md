@@ -1,8 +1,8 @@
 # RoboShield: Real-Time RTPS Security Watchdog
 
-RoboShield is an embedded, lightweight Network Intrusion Detection System (NIDS) and inline packet filter designed specifically for ROS 2 (RTPS/DDS) networks. It runs out-of-band on dedicated network appliances (such as the NanoPi R2S) to monitor, detect, and mitigate cyber-physical threats without requiring modifications to the robot's onboard firmware or ROS 2 software stack.
+RoboShield is an embedded, lightweight Network Intrusion Detection System (NIDS) designed specifically for ROS 2 (RTPS/DDS) networks. It runs out-of-band on dedicated network appliances (such as the NanoPi R2S) to passively monitor, detect, and alert on cyber-physical threats without requiring modifications to the robot's onboard firmware or ROS 2 software stack.
 
-Developed as part of security research targeting publications in **IEEE RAS / ICRA / NDSS**, RoboShield focuses on sub-millisecond packet inspection latency to remain compatible with strict real-time robotic control loops.
+Developed as part of security research targeting publications in **IEEE RAS / ICRA**, RoboShield focuses on sub-millisecond packet inspection latency to remain compatible with strict real-time robotic control loops. Micro-benchmarks on an x86 dev machine show an average parse+policy-check latency of **~1.36 μs** per packet (~734K packets/sec throughput).
 
 ---
 
@@ -11,9 +11,7 @@ Developed as part of security research targeting publications in **IEEE RAS / IC
 - **Zero-Trust Network Discovery**: Performs out-of-band topology scanning. Compares discovered DDS Participant GUID prefixes against a strict security policy.
 - **Topic-to-Node Access Control**: Maps RTPS `DATA` submessages to their source GUIDs. Detects and flags unauthorized nodes attempting to publish to sensitive topics (e.g. `/cmd_vel` spoofing).
 - **Rate-Based DoS & Flood Detection**: Employs sliding-window frequency tracking to detect message floods, telemetry denial-of-service, or faulty/compromised sensors exceeding safety limits.
-- **Low-Latency Passive Tap & Inline filtering**:
-  - **Passive mode**: Uses `libpcap` to monitor traffic from a network mirror port.
-  - **Inline mode**: Directs traffic using Linux `iptables` and `NFQUEUE` to drop/accept packets in-path.
+- **Low-Latency Passive Tap**: Uses `libpcap` to capture and inspect traffic from a network mirror port or bridge interface with minimal overhead.
 - **SIEM Integration**: Appends structured JSON security alerts suitable for ingestion by central logging tools (Splunk, ElasticSearch, or local syslog).
 
 ---
@@ -117,6 +115,15 @@ Injects traffic using an unauthorized node GUID prefix not listed in the whiteli
 ./target/release/roboshield-simulator --mode spoof --port 7412
 ```
 Look at the output console of `roboshield-core` or inspect `alerts.json` to verify that NIDS alerts are captured.
+
+---
+
+## Roadmap
+
+- [ ] **Inline Packet Dropping (IPS mode)**: Integrate Linux `NFQUEUE` to actively drop/accept packets in-path, upgrading from passive IDS to an inline Intrusion Prevention System.
+- [ ] **NanoPi R2S Hardware Benchmarks**: Run and publish latency benchmarks directly on the target ARM64 bridge hardware.
+- [ ] **Dockerized Deployment**: Single-command container setup for easy evaluation.
+- [ ] **Performance Charts**: Latency distribution histograms under normal vs. flood traffic scenarios.
 
 ---
 
