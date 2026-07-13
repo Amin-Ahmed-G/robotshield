@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "roboshield-core",
+    "roboshield-simulator",
+]
+resolver = "2"

@@ -1,0 +1,4 @@
+/target
+/alerts.json
+**/*.rs.bk
+Cargo.lock

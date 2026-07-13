@@ -1,0 +1,27 @@
+# RoboShield NIDS Security Policy Configuration
+
+# Whitelisted DDS/RTPS Participant GUID Prefixes
+# Nodes in the ROS 2 network must match these prefixes to be allowed to join/publish
+allowed_guid_prefixes = [
+    "01:0f:a5:bc:de:f0:12:34:56:78:90:ab", # Example standard compute board (R2S)
+    "01:0f:a5:bc:de:f0:12:34:56:78:90:ac", # Example simulator board
+    "01:0f:ab:cd:ef:01:23:45:67:89:ab:cd", # Local test runner GUID
+]
+
+# Mapping of topic names to authorized node GUID prefixes
+# Format: "topic = [GUID prefixes]"
+[topic_publishers]
+"/cmd_vel" = [
+    "01:0f:a5:bc:de:f0:12:34:56:78:90:ab",
+    "01:0f:ab:cd:ef:01:23:45:67:89:ab:cd"
+]
+"/joint_states" = [
+    "01:0f:a5:bc:de:f0:12:34:56:78:90:ac",
+    "01:0f:ab:cd:ef:01:23:45:67:89:ab:cd"
+]
+
+# Frequency checks (Min and Max normal frequency in Hz) for key topics
+# Format: "topic = { min_hz = X, max_hz = Y }"
+[frequency_limits]
+"/cmd_vel" = { min_hz = 1.0, max_hz = 60.0 }
+"/joint_states" = { min_hz = 5.0, max_hz = 100.0 }
