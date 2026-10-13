@@ -20,6 +20,25 @@ console) and the original **Python** package. They share topics, params and form
 
 ![console](docs/firewall_console.png)
 
+## Results
+
+Measured on an AMD Ryzen 7 7435HS laptop (ROS 2 Jazzy, Fast DDS, two ROS domains on
+one machine). Reproduce with the scripts in [`bench/`](bench/). Real NanoPi
+numbers are still to come.
+
+| | |
+|---|---|
+| Rule engine, per 6-joint command (Rust) | **1.37 µs** median, 2.2 µs p99 (7x faster than Python) |
+| Latency the gateway adds end to end | **+0.5 ms** median (Python gateway: +1.0 ms) |
+| Commands delivered in the latency runs | 1000 / 1000 in every mode |
+| Attack self-test (SROS2 on, cert-less attacker running) | **8 / 8** detected, robot never past its limit |
+| Flood to lockdown | ~10 ms after the flood starts |
+
+![Live attack timeline](docs/perf_attack_timeline.png)
+![Gateway latency](docs/perf_gateway_latency.png)
+![Rule engine speed](docs/perf_rule_engine.png)
+![v1 vs v2](docs/v1_vs_v2.png)
+
 | Executable | Runs on | Purpose |
 |---|---|---|
 | `robot_firewall` (Rust) | gateway | Default gateway. Same role as `firewall_node`, but drops unauthorized publishers message by message. |

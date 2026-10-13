@@ -15,3 +15,4 @@ rust/target/
 # VS Code IntelliSense cache (1 GB)
 .vscode/browse.vc.db
 .vscode/*.db*
+rust/target-bench/
