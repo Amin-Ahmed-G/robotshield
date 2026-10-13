@@ -5,7 +5,7 @@
   <version>0.2.0</version>
   <description>Joint state monitoring and a two-domain robot command firewall for a gateway board</description>
   <maintainer email="aminahmedg2005@gmail.com">aarock17</maintainer>
-  <license>Apache-2.0</license>
+  <license>MIT</license>
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>

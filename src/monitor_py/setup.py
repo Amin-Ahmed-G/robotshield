@@ -20,7 +20,7 @@ setup(
     maintainer='aarock17',
     maintainer_email='aminahmedg2005@gmail.com',
     description='Joint state monitoring and a two-domain robot command firewall',
-    license='Apache-2.0',
+    license='MIT',
     extras_require={
         'test': [
             'pytest',

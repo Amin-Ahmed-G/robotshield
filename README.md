@@ -63,3 +63,9 @@ Tests: `colcon test --packages-select monitor_py && colcon test-result --verbose
 These include unit tests for every rule and an in-process two-domain integration test.
 
 Deploying to real hardware: [deploy/nanopi/README.md](deploy/nanopi/README.md).
+
+## License
+
+MIT, see [LICENSE](LICENSE). Exception: the vendored copy of rclrs in
+`rust/vendor/rclrs` remains under its upstream Apache-2.0 license
+([rust/vendor/rclrs/LICENSE](rust/vendor/rclrs/LICENSE)).
