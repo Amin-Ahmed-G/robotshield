@@ -1,0 +1,49 @@
+[Unit]
+Description=Robot command firewall (ROS 2 two-domain gateway)
+Documentation=file:///opt/robot_firewall_ws/src/deploy/nanopi/README.md
+Wants=network-online.target
+After=network-online.target nftables.service time-sync.target
+Requires=nftables.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=robotfw
+Group=robotfw
+EnvironmentFile=/etc/robot_firewall/firewall.env
+Environment=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+Environment=ROS_SECURITY_KEYSTORE=/etc/robot_firewall/keystore
+Environment=ROS_SECURITY_STRATEGY=Enforce
+Environment=ROS_HOME=/var/lib/robot_firewall
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=+/usr/local/lib/robot_firewall/check_nft.sh
+ExecStart=/usr/local/lib/robot_firewall/run_firewall.sh
+# The node pings the watchdog only while both domain threads are alive.
+WatchdogSec=10
+Restart=always
+RestartSec=2
+StateDirectory=robot_firewall
+LogsDirectory=robot_firewall
+
+# Hardening: the firewall process needs no privileges at all.
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

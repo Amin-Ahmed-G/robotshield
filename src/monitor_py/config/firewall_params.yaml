@@ -1,0 +1,48 @@
+# Robot firewall parameters (firewall_node, trusted-side node "firewall_gateway").
+# Use floats for float parameters (1.0, not 1) or ROS will reject the type.
+firewall_gateway:
+  ros__parameters:
+    joint_names: [joint_1, joint_2, joint_3, joint_4]
+
+    # Global limits (rad, rad/s, Nm). Negative velocity/effort limit = disabled.
+    position_min: -1.0
+    position_max: 1.0
+    velocity_limit: 1.0
+    effort_limit: -1.0
+    # Per-joint overrides, e.g.:
+    # limits:
+    #   joint_2: {position_min: -0.5, position_max: 1.6, velocity: 0.8}
+
+    limit_action: clamp          # clamp | drop
+    max_step: 0.2                # rad, max jump between accepted commands
+    max_rate_hz: 50.0            # token bucket rate
+    burst: 10.0
+    max_age_s: 0.5               # replay window; laptop and gateway clocks must be NTP-synced
+    max_future_s: 0.2
+    require_stamp: true
+
+    lockdown_threshold: 20       # incidents within lockdown_window_s -> LOCKDOWN
+    lockdown_window_s: 2.0
+    report_interval_s: 1.0       # aggregate repeated incidents into one event per interval
+    start_locked: true           # boot in LOCKDOWN, operator must re-arm
+
+    state_margin: 0.05           # robot state beyond limits + margin -> STATE_GUARD lockdown
+    state_timeout_s: 0.5
+    expected_state_publishers: 1 # more publishers on robot joint_states = spoofing
+
+    command_topic: joint_commands     # untrusted side input
+    state_topic: joint_states
+    output_topic: joint_commands      # trusted side output
+    output_type: joint_state          # joint_state | float64_multi_array
+
+    # Node names allowed to publish commands on the untrusted side ('' = any).
+    # The Rust gateway drops other publishers' messages one by one; the Python
+    # gateway cannot attribute messages, so it relies on unauthorized_lockdown.
+    allowed_publishers: [attack_sim_node]
+    unauthorized_lockdown: true       # also lock down when one appears
+
+    input_queue_depth: 100           # so floods reach the rate limiter
+    hold_rate_hz: 10.0
+    watch_period_s: 1.0
+    incident_log_path: ''             # default ~/.ros/robot_firewall/incidents.jsonl
+    nft_counters_file: ''             # e.g. /run/robot_firewall/nft_counters.json

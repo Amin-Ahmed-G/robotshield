@@ -1,0 +1,18 @@
+# Robot firewall network layout (rendered by setup_nanopi.sh --with-netplan).
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ${ROBOT_IF}:
+      # Isolated robot LAN: static, no gateway, no DHCP.
+      addresses: [${GATEWAY_ROBOT_IP}/${ROBOT_PREFIX}]
+      dhcp4: false
+      dhcp6: false
+      link-local: []
+  wifis:
+    ${WIFI_IF}:
+      dhcp4: true
+      dhcp6: false
+      access-points:
+        "${WIFI_SSID}":
+          password: "${WIFI_PASSWORD}"

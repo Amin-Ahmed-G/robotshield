@@ -1,0 +1,20 @@
+[Unit]
+Description=Export robot firewall nftables counters for firewall_node
+After=nftables.service
+Requires=nftables.service
+
+[Service]
+ExecStart=/usr/local/lib/robot_firewall/export_nft_counters.py
+Restart=always
+RestartSec=2
+RuntimeDirectory=robot_firewall
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target

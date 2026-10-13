@@ -1,0 +1,19 @@
+[package]
+name = "firewall_console"
+description = "Desktop console for the robot firewall: every debugging command as a button"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+fw_core.workspace = true
+rclrs.workspace = true
+sensor_msgs.workspace = true
+std_msgs.workspace = true
+std_srvs.workspace = true
+diagnostic_msgs.workspace = true
+builtin_interfaces.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+eframe = "0.36"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }

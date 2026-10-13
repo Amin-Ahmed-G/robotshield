@@ -1,0 +1,81 @@
+#!/usr/sbin/nft -f
+# Robot firewall host rules (rendered by setup_nanopi.sh; do not edit in /etc).
+#
+#   ${WIFI_IF}  (untrusted): only ${LAPTOP_IP}, only SSH + RTPS for ROS domain ${UNTRUSTED_DOMAIN}
+#   ${ROBOT_IF} (trusted):   only ${ROBOT_IP},  only RTPS for ROS domain ${TRUSTED_DOMAIN}
+#   No forwarding between interfaces: the firewall_node process is the only bridge.
+#
+# RTPS ports for domain d are 7400+250*d .. 7400+250*d+249 (discovery + user traffic).
+
+flush ruleset
+
+define WIFI_IF = "${WIFI_IF}"
+define ROBOT_IF = "${ROBOT_IF}"
+define LAPTOP_IP = ${LAPTOP_IP}
+define ROBOT_IP = ${ROBOT_IP}
+define UNTRUSTED_RTPS = ${UNTRUSTED_RTPS}
+define TRUSTED_RTPS = ${TRUSTED_RTPS}
+define RTPS_MCAST = 239.255.0.1
+
+table inet robot_fw {
+    # Named counters are exported to /run/robot_firewall/nft_counters.json and
+    # reported by firewall_node as NETWORK_PROBE events.
+    counter wifi_blocked {}
+    counter robot_lan_blocked {}
+    counter forward_blocked {}
+    counter invalid_blocked {}
+    counter ssh_rate_limited {}
+    counter output_blocked {}
+
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        iif lo accept
+        ct state invalid counter name invalid_blocked drop
+        ct state established,related accept
+
+        # --- WiFi / laptop side (untrusted) ---
+        iifname $WIFI_IF ip saddr $LAPTOP_IP tcp dport 22 ct state new \
+            limit rate over 6/minute burst 6 packets counter name ssh_rate_limited drop
+        iifname $WIFI_IF ip saddr $LAPTOP_IP tcp dport 22 accept
+        iifname $WIFI_IF ip saddr $LAPTOP_IP udp dport $UNTRUSTED_RTPS accept
+        iifname $WIFI_IF udp sport 67 udp dport 68 accept    # DHCP replies
+        iifname $WIFI_IF ip saddr $LAPTOP_IP icmp type echo-request limit rate 5/second accept
+
+        # --- Robot LAN (trusted) ---
+        iifname $ROBOT_IF ip saddr $ROBOT_IP udp dport $TRUSTED_RTPS accept
+
+        # --- Everything else: count, log (rate limited), drop ---
+        iifname $WIFI_IF counter name wifi_blocked \
+            limit rate 10/minute log prefix "robot_fw wifi drop: " drop
+        iifname $WIFI_IF drop
+        iifname $ROBOT_IF counter name robot_lan_blocked \
+            limit rate 10/minute log prefix "robot_fw robot-lan drop: " drop
+        iifname $ROBOT_IF drop
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+        counter name forward_blocked drop
+    }
+
+    chain output {
+        type filter hook output priority filter; policy drop;
+
+        oif lo accept
+        ct state established,related accept
+        ip protocol igmp accept
+
+        # ROS traffic, each domain only on its own interface.
+        oifname $WIFI_IF ip daddr { $LAPTOP_IP, $RTPS_MCAST } udp dport $UNTRUSTED_RTPS accept
+        oifname $ROBOT_IF ip daddr { $ROBOT_IP, $RTPS_MCAST } udp dport $TRUSTED_RTPS accept
+
+        # Gateway housekeeping over WiFi: DHCP, DNS, NTP (replay protection
+        # needs synced clocks), HTTP(S) for apt.
+        oifname $WIFI_IF udp dport { 53, 67, 123 } accept
+        oifname $WIFI_IF tcp dport { 53, 80, 443 } accept
+        oifname $WIFI_IF ip daddr $LAPTOP_IP icmp type echo-reply accept
+
+        counter name output_blocked drop
+    }
+}

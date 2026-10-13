@@ -1,0 +1,16 @@
+# Robot firewall kernel hardening (rendered by setup_nanopi.sh).
+# No routing between WiFi and the robot LAN: only firewall_node bridges them.
+net.ipv4.ip_forward = 0
+net.ipv6.conf.all.forwarding = 0
+# IPv6 is not used; disable it so link-local v6 cannot become a side channel.
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+net.ipv4.tcp_syncookies = 1
+# Proxy ARP would let the robot LAN answer for WiFi addresses and vice versa.
+net.ipv4.conf.all.proxy_arp = 0

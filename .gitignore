@@ -1,4 +1,17 @@
-/target
-/alerts.json
-**/*.rs.bk
-Cargo.lock
+build/
+install/
+log/
+__pycache__/
+*.pyc
+
+# Site-specific gateway config and SROS2 key material: never commit
+deploy/nanopi/firewall.env
+*keystore*/
+*keystore*.tgz
+
+# Rust build output
+rust/target/
+
+# VS Code IntelliSense cache (1 GB)
+.vscode/browse.vc.db
+.vscode/*.db*

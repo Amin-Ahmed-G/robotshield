@@ -1,0 +1,15 @@
+{
+    "ROS2.distro": "jazzy",
+    "python.autoComplete.extraPaths": [
+        "/home/aarock17/ros2_monitor_suite/install/monitor_py/lib/python3.12/site-packages",
+        "/home/aarock17/ros2_ws/build/py_pkg",
+        "/home/aarock17/ros2_ws/install/py_pkg/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/aarock17/ros2_monitor_suite/install/monitor_py/lib/python3.12/site-packages",
+        "/home/aarock17/ros2_ws/build/py_pkg",
+        "/home/aarock17/ros2_ws/install/py_pkg/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ]
+}
