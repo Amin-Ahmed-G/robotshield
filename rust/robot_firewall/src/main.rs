@@ -333,9 +333,17 @@ impl Firewall {
     }
 
     fn on_rearm(&self) -> Trigger_Response {
-        let (ok, message) = self.core.lock().unwrap().rearm(self.now());
+        let (was_armed, ok, message, mode) = {
+            let mut core = self.core.lock().unwrap();
+            let was_armed = core.mode == fw::ARMED;
+            let (ok, message) = core.rearm(self.now());
+            (was_armed, ok, message, core.mode)
+        };
+        if was_armed {
+            // No state change: answer the caller, but keep the incident feed quiet.
+            return Trigger_Response { success: ok, message };
+        }
         log_warn!(self.untrusted.logger(), "Re-arm requested: {message}");
-        let mode = self.core.lock().unwrap().mode;
         let _ = self.events_pub.publish(DiagnosticStatus {
             level: if ok { DiagnosticStatus::OK } else { DiagnosticStatus::WARN },
             name: "robot_firewall: REARM".into(),

@@ -32,6 +32,9 @@ struct Args {
     /// Run the attack self-test without opening a window; exit 0 if all pass.
     #[arg(long)]
     selftest: bool,
+    /// UI scale factor (e.g. 1.5 for HiDPI screens or crisp screenshots).
+    #[arg(long, default_value_t = 1.0)]
+    zoom: f32,
 }
 
 /// Headless self-test: prints the console log to stdout as it runs.
@@ -79,13 +82,16 @@ fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title("Robot Firewall Console")
-            .with_inner_size([1280.0, 820.0])
+            .with_inner_size([1280.0 * args.zoom, 820.0 * args.zoom])
             .with_min_inner_size([900.0, 600.0]),
         ..Default::default()
     };
     eframe::run_native(
         "Robot Firewall Console",
         options,
-        Box::new(move |_cc| Ok(Box::new(app::ConsoleApp::new(ros, args.gateway, args.robot_ip)))),
+        Box::new(move |cc| {
+            cc.egui_ctx.set_zoom_factor(args.zoom);
+            Ok(Box::new(app::ConsoleApp::new(ros, args.gateway, args.robot_ip)))
+        }),
     )
 }

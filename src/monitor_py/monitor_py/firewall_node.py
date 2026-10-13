@@ -225,8 +225,12 @@ class RobotFirewall:
 
     def _on_rearm(self, request, response):
         with self.lock:
+            was_armed = self.core.mode == fw.ARMED
             ok, message = self.core.rearm(self.now())
         response.success, response.message = ok, message
+        if was_armed:
+            # No state change: answer the caller, but keep the incident feed quiet.
+            return response
         self.log.warn(f'Re-arm requested: {message}')
         self.events_pub.publish(DiagnosticStatus(
             level=DiagnosticStatus.OK if ok else DiagnosticStatus.WARN,
