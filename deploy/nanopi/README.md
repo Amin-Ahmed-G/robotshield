@@ -87,6 +87,10 @@ ros2 param set /attack_sim_node attack_mode flood           # try an attack
 ```
 Re-arming is refused unless the robot's state is fresh and within limits.
 
+**7. SIEM (optional).** Set `SIEM_SYSLOG=udp://<collector>:514` in
+`firewall.env` and re-run the setup. Incidents then stream to your SIEM tagged
+with MITRE ATT&CK for ICS. See [docs/SIEM.md](../../docs/SIEM.md).
+
 ## Verify on the real hardware
 
 From the laptop:

@@ -16,6 +16,7 @@
 //! publishers are dropped individually.
 
 mod config;
+mod siem;
 
 use std::collections::HashMap;
 use std::fs::OpenOptions;
@@ -197,6 +198,7 @@ struct Firewall {
     diag_pub: Publisher<DiagnosticArray>,
     status_pub: Publisher<StringMsg>,
     incident_log: PathBuf,
+    siem: Option<siem::SiemExporter>,
     /// RMW GID of each publisher on the untrusted command topic -> node name.
     publishers: Mutex<HashMap<[u8; 16], String>>,
     /// When each not-yet-identified GID first sent a message, and when the
@@ -230,7 +232,7 @@ impl Firewall {
             } else {
                 log_warn!(self.untrusted.logger(), "{summary}");
             }
-            let status = DiagnosticStatus {
+            let mut status = DiagnosticStatus {
                 level: level_of(&inc.severity),
                 name: format!("robot_firewall: {}", inc.attack),
                 message: summary,
@@ -245,6 +247,14 @@ impl Firewall {
                     kv("detail", &inc.detail),
                 ],
             };
+            if let Some(t) = fw_core::mitre::technique(&inc.attack) {
+                status.values.push(kv("mitre_technique_id", t.id));
+                status.values.push(kv("mitre_technique", t.name));
+                status.values.push(kv("mitre_tactic", t.tactic));
+            }
+            if let Some(siem) = &self.siem {
+                siem.send(&inc);
+            }
             let _ = self.events_pub.publish(status);
             match log.as_mut() {
                 Ok(f) => {
@@ -399,8 +409,8 @@ impl Firewall {
         let state_pubs = self.trusted.count_publishers(&state_topic).unwrap_or(0);
         if state_pubs > self.params.expected_state_publishers {
             out.extend(core.report_external(
-                fw::ROGUE_DEVICE,
-                &format!("{state_pubs} publishers on robot {state_topic} (expected {}); possible state spoofing",
+                fw::STATE_SPOOFING,
+                &format!("{state_pubs} publishers on robot {state_topic} (expected {}); robot state may be faked",
                          self.params.expected_state_publishers),
                 now, "robot LAN", true));
         }
@@ -554,6 +564,7 @@ fn run() -> Result<(), String> {
         diag_pub: untrusted.create_publisher("/diagnostics").map_err(err)?,
         status_pub: untrusted.create_publisher("/firewall/status").map_err(err)?,
         incident_log,
+        siem: siem::SiemExporter::new(&params.siem_syslog, &params.siem_format, &params.hardware_id)?,
         publishers: Mutex::new(HashMap::new()),
         unidentified: Mutex::new((HashMap::new(), None)),
         watch: Mutex::new(WatchState::default()),
@@ -602,6 +613,9 @@ fn run() -> Result<(), String> {
             args.untrusted_domain, args.trusted_domain, core.cfg.joint_names, core.mode,
             fw.params.allowed_publishers, fw.incident_log.display()
         );
+        if let Some(siem) = &fw.siem {
+            log_info!(fw.untrusted.logger(), "SIEM export: {} (MITRE {})", siem.describe(), fw_core::mitre::ATTACK_VERSION);
+        }
     }
 
     let trusted_thread = std::thread::spawn(move || trusted_exec.spin(SpinOptions::default()));

@@ -42,6 +42,17 @@ set -a; . "$HERE/firewall.env"; set +a
 export UNTRUSTED_RTPS="$((7400 + 250 * UNTRUSTED_DOMAIN))-$((7400 + 250 * UNTRUSTED_DOMAIN + 249))"
 export TRUSTED_RTPS="$((7400 + 250 * TRUSTED_DOMAIN))-$((7400 + 250 * TRUSTED_DOMAIN + 249))"
 
+# SIEM export: allow exactly udp://host:port out of the WiFi interface.
+SIEM_OUTPUT_RULE="# SIEM export disabled (SIEM_SYSLOG empty)"
+if [ -n "${SIEM_SYSLOG:-}" ]; then
+    if [[ "$SIEM_SYSLOG" =~ ^udp://([0-9.]+):([0-9]+)$ ]]; then
+        SIEM_OUTPUT_RULE="oifname \$WIFI_IF ip daddr ${BASH_REMATCH[1]} udp dport ${BASH_REMATCH[2]} accept"
+    else
+        echo "SIEM_SYSLOG must look like udp://192.168.1.60:514 (IPv4 address)" >&2; exit 1
+    fi
+fi
+export SIEM_OUTPUT_RULE
+
 # Safety: if we are on SSH, it must come from LAPTOP_IP or the new rules cut us off.
 if [ -n "${SSH_CLIENT:-}" ] && [ "${SSH_CLIENT%% *}" != "$LAPTOP_IP" ] && [ $FORCE = 0 ]; then
     echo "You are connected over SSH from ${SSH_CLIENT%% *}, but LAPTOP_IP=$LAPTOP_IP." >&2

@@ -38,13 +38,33 @@ FLOOD = 'FLOOD'
 REPLAY = 'REPLAY'
 UNAUTHORIZED_PUBLISHER = 'UNAUTHORIZED_PUBLISHER'
 ROGUE_DEVICE = 'ROGUE_DEVICE_ON_ROBOT_LAN'
+STATE_SPOOFING = 'STATE_SPOOFING'
 STATE_GUARD = 'STATE_GUARD'
 STATE_STALE = 'STATE_STALE'
 NETWORK_PROBE = 'NETWORK_PROBE'
 BLOCKED_IN_LOCKDOWN = 'BLOCKED_IN_LOCKDOWN'
 LOCKDOWN_ENTERED = 'LOCKDOWN'
 
-CRITICAL = {ROGUE_DEVICE, STATE_GUARD, LOCKDOWN_ENTERED}
+CRITICAL = {ROGUE_DEVICE, STATE_SPOOFING, STATE_GUARD, LOCKDOWN_ENTERED}
+
+# MITRE ATT&CK for ICS tags (verified against the ics-attack STIX data v20;
+# T0855/T0856 were revoked there in favour of T1692.001/.002).
+MITRE_FRAMEWORK = 'ATT&CK for ICS v20'
+_COMMAND_MESSAGE = ('T1692.001', 'Command Message', 'Impair Process Control')
+MITRE = {
+    MALFORMED: _COMMAND_MESSAGE,
+    INVALID_VALUE: _COMMAND_MESSAGE,
+    LIMIT_VIOLATION: _COMMAND_MESSAGE,
+    STEP_JUMP: _COMMAND_MESSAGE,
+    REPLAY: _COMMAND_MESSAGE,
+    UNAUTHORIZED_PUBLISHER: _COMMAND_MESSAGE,
+    FLOOD: ('T0814', 'Denial of Service', 'Inhibit Response Function'),
+    ROGUE_DEVICE: ('T0848', 'Rogue Master', 'Initial Access'),
+    STATE_SPOOFING: ('T1692.002', 'Reporting Message', 'Evasion'),
+    STATE_GUARD: ('T0880', 'Loss of Safety', 'Impact'),
+    STATE_STALE: ('T0815', 'Denial of View', 'Impact'),
+    NETWORK_PROBE: ('T0846', 'Remote System Discovery', 'Discovery'),
+}
 
 
 @dataclass
@@ -85,9 +105,17 @@ class Incident:
             text += ' -> LOCKDOWN, robot holding last safe pose'
         return text
 
+    def mitre(self):
+        """(technique id, name, tactic) or None for firewall responses."""
+        return MITRE.get(self.attack)
+
     def to_dict(self) -> dict:
         data = asdict(self)
         data['summary'] = self.summary()
+        tag = self.mitre()
+        if tag:
+            data['mitre_technique_id'], data['mitre_technique'], data['mitre_tactic'] = tag
+            data['mitre_framework'] = MITRE_FRAMEWORK
         return data
 
 

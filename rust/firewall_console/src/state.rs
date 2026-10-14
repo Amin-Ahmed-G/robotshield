@@ -32,6 +32,10 @@ pub struct EventRow {
     pub action: String,
     pub source: String,
     pub count: String,
+    /// MITRE ATT&CK for ICS technique id / name / tactic ('' if untagged).
+    pub mitre_id: String,
+    pub mitre_name: String,
+    pub mitre_tactic: String,
 }
 
 #[derive(Clone, PartialEq)]

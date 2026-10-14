@@ -41,7 +41,7 @@ numbers are still to come.
 
 | Executable | Runs on | Purpose |
 |---|---|---|
-| `robot_firewall` (Rust) | gateway | Default gateway. Same role as `firewall_node`, but drops unauthorized publishers message by message. |
+| `robot_firewall` (Rust) | gateway | Default gateway. Same role as `firewall_node`, but drops unauthorized publishers message by message, and streams incidents to a SIEM (CEF/JSON syslog) tagged with MITRE ATT&CK for ICS ([docs/SIEM.md](docs/SIEM.md)). |
 | `firewall_console` (Rust) | laptop | GUI with every debugging command as a button, plus a full attack self-test. |
 | `firewall_node` | gateway | Bridges the untrusted (WiFi) and trusted (robot) ROS domains. Inspects every command, clamps or drops it, or locks down, and reports each incident. |
 | `firewall_dashboard` | laptop | Live terminal view: ARMED/LOCKDOWN state, counters, and an incident feed ("what attack, what we did"). |

@@ -15,7 +15,9 @@ if [ "${FIREWALL_IMPL:-rust}" = rust ]; then
         --enclave "${FIREWALL_ENCLAVE}" \
         --config "$PARAMS" \
         --set "nft_counters_file=$COUNTERS" \
-        --set "incident_log_path=$INCIDENTS"
+        --set "incident_log_path=$INCIDENTS" \
+        --set "siem_syslog=${SIEM_SYSLOG:-}" \
+        --set "siem_format=${SIEM_FORMAT:-cef}"
 fi
 
 exec /opt/robot_firewall_ws/install/monitor_py/lib/monitor_py/firewall_node \

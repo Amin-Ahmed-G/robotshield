@@ -32,6 +32,8 @@ pub const FLOOD: &str = "FLOOD";
 pub const REPLAY: &str = "REPLAY";
 pub const UNAUTHORIZED_PUBLISHER: &str = "UNAUTHORIZED_PUBLISHER";
 pub const ROGUE_DEVICE: &str = "ROGUE_DEVICE_ON_ROBOT_LAN";
+/// Extra publishers on the robot's state topic: someone faking telemetry.
+pub const STATE_SPOOFING: &str = "STATE_SPOOFING";
 pub const STATE_GUARD: &str = "STATE_GUARD";
 pub const STATE_STALE: &str = "STATE_STALE";
 pub const NETWORK_PROBE: &str = "NETWORK_PROBE";
@@ -41,7 +43,7 @@ pub const UNIDENTIFIED_PUBLISHER: &str = "UNIDENTIFIED_PUBLISHER";
 pub const LOCKDOWN_ENTERED: &str = "LOCKDOWN";
 
 fn is_critical(attack: &str) -> bool {
-    matches!(attack, ROGUE_DEVICE | STATE_GUARD | LOCKDOWN_ENTERED)
+    matches!(attack, ROGUE_DEVICE | STATE_SPOOFING | STATE_GUARD | LOCKDOWN_ENTERED)
 }
 
 /// Transport-independent joint command (maps to sensor_msgs/JointState).
@@ -106,10 +108,17 @@ impl Incident {
         text
     }
 
-    /// JSON line for the incident log (same fields as the Python version).
+    /// JSON line for the incident log and SIEM (same fields as the Python
+    /// version). MITRE ATT&CK for ICS fields are flat for easy SIEM mapping.
     pub fn to_json(&self) -> String {
         let mut value = serde_json::to_value(self).expect("incident serializes");
         value["summary"] = serde_json::Value::String(self.summary());
+        if let Some(t) = crate::mitre::technique(&self.attack) {
+            value["mitre_technique_id"] = t.id.into();
+            value["mitre_technique"] = t.name.into();
+            value["mitre_tactic"] = t.tactic.into();
+            value["mitre_framework"] = crate::mitre::ATTACK_VERSION.into();
+        }
         value.to_string()
     }
 }

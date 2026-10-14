@@ -423,7 +423,8 @@ impl ConsoleApp {
                 return;
             }
             // Fixed columns, then DETAIL takes whatever width is left.
-            const COLS: [(&str, f32); 5] = [("TIME", 74.0), ("SEVERITY", 90.0), ("TYPE", 190.0), ("ACTION", 110.0), ("SOURCE", 130.0)];
+            const COLS: [(&str, f32); 6] =
+                [("TIME", 74.0), ("SEVERITY", 90.0), ("TYPE", 180.0), ("MITRE ATT&CK", 96.0), ("ACTION", 110.0), ("SOURCE", 120.0)];
             let gap = 10.0;
             let fixed: f32 = COLS.iter().map(|(_, w)| w + gap).sum();
             let detail_w = (ui.available_width() - fixed - 16.0).max(120.0);
@@ -466,8 +467,16 @@ impl ConsoleApp {
                             cell(ui, COLS[0].1, &mut |ui| { ui.label(RichText::new(&e.when).monospace().color(TEXT2)); });
                             cell(ui, COLS[1].1, &mut |ui| { chip(ui, sev, color); });
                             cell(ui, COLS[2].1, &mut |ui| { ui.add(egui::Label::new(RichText::new(&e.attack).strong()).truncate()); });
-                            cell(ui, COLS[3].1, &mut |ui| { ui.label(RichText::new(&action).color(action_color)); });
-                            cell(ui, COLS[4].1, &mut |ui| {
+                            cell(ui, COLS[3].1, &mut |ui| {
+                                if e.mitre_id.is_empty() {
+                                    ui.label(RichText::new("—").color(MUTED));
+                                } else {
+                                    chip(ui, &e.mitre_id, ACCENT).on_hover_text(format!(
+                                        "MITRE ATT&CK for ICS\n{} {}\nTactic: {}", e.mitre_id, e.mitre_name, e.mitre_tactic));
+                                }
+                            });
+                            cell(ui, COLS[4].1, &mut |ui| { ui.label(RichText::new(&action).color(action_color)); });
+                            cell(ui, COLS[5].1, &mut |ui| {
                                 ui.add(egui::Label::new(RichText::new(if e.source.is_empty() { "—" } else { &e.source }).color(TEXT2)).truncate());
                             });
                             cell(ui, detail_w, &mut |ui| {

@@ -44,6 +44,10 @@ struct Bench {
 
 impl Bench {
     fn start(untrusted: usize, trusted: usize) -> Bench {
+        Self::start_with(untrusted, trusted, &[])
+    }
+
+    fn start_with(untrusted: usize, trusted: usize, extra: &[String]) -> Bench {
         std::env::set_var("ROS_AUTOMATIC_DISCOVERY_RANGE", "LOCALHOST");
         std::env::set_var("ROS_SECURITY_ENABLE", "false");
         let log = std::env::temp_dir().join(format!("robot_fw_test_{untrusted}.jsonl"));
@@ -52,6 +56,7 @@ impl Bench {
             .args(["--set", &format!("joint_names={JOINTS:?}").replace('"', "")])
             .args(["--set", "lockdown_threshold=5", "--set", "allowed_publishers=[laptop]"])
             .args(["--set", "watch_period_s=0.2", "--set", &format!("incident_log_path={}", log.display())])
+            .args(extra.iter().flat_map(|kv| ["--set".to_string(), kv.clone()]))
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
@@ -263,4 +268,31 @@ fn unauthorized_publisher_dropped_while_operator_keeps_control() {
     assert!(!positions.contains(&0.05), "intruder command reached the robot");
     assert!(positions.contains(&0.1), "operator commands were blocked");
     assert!(!b.attacks().iter().any(|a| a == "LOCKDOWN"), "intruder forced a lockdown");
+}
+
+#[test]
+fn incidents_stream_to_siem_as_cef_with_mitre_tags() {
+    let collector = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
+    collector.set_read_timeout(Some(Duration::from_millis(200))).unwrap();
+    let port = collector.local_addr().unwrap().port();
+    let b = Bench::start_with(59, 60, &[format!("siem_syslog=udp://127.0.0.1:{port}"), "siem_format=cef".into()]);
+    b.arm();
+    b.send(&[f64::NAN, 0.0]);
+    let mut got = String::new();
+    assert!(wait_for(5.0, || {
+        let mut buf = [0u8; 4096];
+        if let Ok(n) = collector.recv(&mut buf) {
+            let msg = String::from_utf8_lossy(&buf[..n]).to_string();
+            if msg.contains("INVALID_VALUE") {
+                got = msg;
+            }
+        }
+        !got.is_empty()
+    }), "no SIEM datagram received");
+    assert!(got.starts_with("<164>1 "), "RFC 5424 local4.warning frame: {got}");
+    assert!(got.contains("CEF:0|RoboShield|robot_firewall|"), "{got}");
+    assert!(got.contains("cs2Label=mitreTechniqueId cs2=T1692.001"), "{got}");
+    assert!(got.contains("cs4Label=mitreTactic cs4=Impair Process Control"), "{got}");
+    // The ROS event carries the same tag for the console.
+    assert!(wait_for(2.0, || b.event_with("INVALID_VALUE", "mitre_technique_id").as_deref() == Some("T1692.001")));
 }

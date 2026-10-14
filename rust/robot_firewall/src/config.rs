@@ -69,6 +69,10 @@ pub struct Params {
     pub incident_log_path: String,
     pub nft_counters_file: String,
     pub hardware_id: String,
+    /// SIEM export target, e.g. udp://10.0.0.5:514 ('' = disabled).
+    pub siem_syslog: String,
+    /// "cef" (Splunk, Sentinel, QRadar, ArcSight) or "json" (Elastic).
+    pub siem_format: String,
 }
 
 impl Default for Params {
@@ -106,6 +110,8 @@ impl Default for Params {
             incident_log_path: String::new(),
             nft_counters_file: String::new(),
             hardware_id: String::new(),
+            siem_syslog: String::new(),
+            siem_format: "cef".into(),
         }
     }
 }
@@ -154,6 +160,12 @@ impl Params {
         }
         if let Some(unknown) = self.limits.keys().find(|j| !self.joint_names.contains(j)) {
             return Err(format!("limits.{unknown}: not in joint_names"));
+        }
+        if !matches!(self.siem_format.as_str(), "cef" | "json") {
+            return Err("siem_format must be 'cef' or 'json'".into());
+        }
+        if !self.siem_syslog.is_empty() && !self.siem_syslog.starts_with("udp://") {
+            return Err("siem_syslog must look like udp://host:514".into());
         }
         if self.max_rate_hz <= 0.0 || self.hold_rate_hz <= 0.0 || self.watch_period_s <= 0.0 {
             return Err("rates and periods must be positive".into());

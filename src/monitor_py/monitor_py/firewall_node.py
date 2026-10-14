@@ -275,8 +275,8 @@ class RobotFirewall:
         state_pubs = self.trusted.count_publishers(self.state_topic)
         if state_pubs > self.expected_state_publishers:
             incidents += self.core.report_external(
-                fw.ROGUE_DEVICE, f'{state_pubs} publishers on robot {self.state_topic} '
-                f'(expected {self.expected_state_publishers}); possible state spoofing',
+                fw.STATE_SPOOFING, f'{state_pubs} publishers on robot {self.state_topic} '
+                f'(expected {self.expected_state_publishers}); robot state may be faked',
                 now, 'robot LAN', critical=True)
         return incidents
 

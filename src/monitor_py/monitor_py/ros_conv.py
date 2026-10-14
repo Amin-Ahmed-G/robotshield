@@ -46,6 +46,9 @@ def key_values(**kwargs) -> list:
 
 
 def incident_to_status(incident: Incident, hardware_id: str) -> DiagnosticStatus:
+    tag = incident.mitre()
+    mitre = {} if tag is None else dict(zip(
+        ('mitre_technique_id', 'mitre_technique', 'mitre_tactic'), tag))
     return DiagnosticStatus(
         level=LEVELS.get(incident.severity, DiagnosticStatus.WARN),
         name=f'robot_firewall: {incident.attack}',
@@ -54,7 +57,7 @@ def incident_to_status(incident: Incident, hardware_id: str) -> DiagnosticStatus
         values=key_values(attack=incident.attack, action=incident.action,
                           count=incident.count, source=incident.source,
                           mode=incident.mode, time=f'{incident.time:.3f}',
-                          detail=incident.detail))
+                          detail=incident.detail, **mitre))
 
 
 def declare_limit_defaults(node) -> dict:

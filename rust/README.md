@@ -14,6 +14,14 @@ identifies the **publisher of every message** and drops commands from
 non-allowlisted nodes one by one, so the real operator keeps control during a
 spoofing attack.
 
+## SIEM export and MITRE ATT&CK for ICS
+
+Every incident carries its MITRE ATT&CK for ICS v20 technique and tactic. The
+gateway can stream incidents as CEF or JSON over syslog/UDP to Splunk,
+Sentinel, QRadar, ArcSight or Elastic (`--set siem_syslog=udp://host:514`).
+See [docs/SIEM.md](../docs/SIEM.md) for the mapping, sample lines and
+collector configs.
+
 ## Build
 
 ```bash

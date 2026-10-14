@@ -76,6 +76,9 @@ table inet robot_fw {
         oifname $WIFI_IF tcp dport { 53, 80, 443 } accept
         oifname $WIFI_IF ip daddr $LAPTOP_IP icmp type echo-reply accept
 
+        # SIEM export (syslog/UDP), only to the configured collector.
+        ${SIEM_OUTPUT_RULE}
+
         counter name output_blocked drop
     }
 }

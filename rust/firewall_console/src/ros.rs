@@ -84,6 +84,9 @@ impl RosLink {
                     action: value("action"),
                     source: value("source"),
                     count: value("count"),
+                    mitre_id: value("mitre_technique_id"),
+                    mitre_name: value("mitre_technique"),
+                    mitre_tactic: value("mitre_tactic"),
                     message: m.message.clone(),
                 };
                 let mut s = lock(&s);

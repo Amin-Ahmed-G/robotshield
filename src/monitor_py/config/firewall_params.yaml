@@ -46,3 +46,8 @@ firewall_gateway:
     watch_period_s: 1.0
     incident_log_path: ''             # default ~/.ros/robot_firewall/incidents.jsonl
     nft_counters_file: ''             # e.g. /run/robot_firewall/nft_counters.json
+
+    # SIEM export (Rust gateway): incidents as syslog/UDP, tagged with
+    # MITRE ATT&CK for ICS. cef = Splunk/Sentinel/QRadar/ArcSight, json = Elastic.
+    siem_syslog: ''                   # e.g. udp://192.168.1.60:514
+    siem_format: cef

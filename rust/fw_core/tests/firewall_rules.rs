@@ -246,6 +246,8 @@ fn summary_and_json() {
     let json: serde_json::Value = serde_json::from_str(&inc.to_json()).unwrap();
     assert_eq!(json["summary"], text);
     assert_eq!(json["count"], 812);
+    assert_eq!(json["mitre_technique_id"], "T0814");
+    assert_eq!(json["mitre_tactic"], "Inhibit Response Function");
 }
 
 #[test]

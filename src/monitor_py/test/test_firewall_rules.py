@@ -187,3 +187,16 @@ def test_summary_text():
     assert text.startswith('FLOOD: 850 Hz') and '812 msg(s) dropped' in text
     assert text.endswith('robot holding last safe pose')
     assert inc.to_dict()['summary'] == text
+
+
+def test_mitre_tags_on_incidents():
+    every = [fw.MALFORMED, fw.INVALID_VALUE, fw.LIMIT_VIOLATION, fw.STEP_JUMP, fw.REPLAY,
+             fw.UNAUTHORIZED_PUBLISHER, fw.FLOOD, fw.ROGUE_DEVICE, fw.STATE_SPOOFING,
+             fw.STATE_GUARD, fw.STATE_STALE, fw.NETWORK_PROBE]
+    assert all(a in fw.MITRE for a in every)
+    inc = fw.Incident(1.0, fw.FLOOD, 'WARN', fw.DROPPED, 3, 'rate', 'x', fw.ARMED)
+    d = inc.to_dict()
+    assert d['mitre_technique_id'] == 'T0814'
+    assert d['mitre_tactic'] == 'Inhibit Response Function'
+    lock = fw.Incident(1.0, fw.LOCKDOWN_ENTERED, 'ERROR', fw.ALERTED, 1, 'r', '', fw.LOCKDOWN)
+    assert 'mitre_technique_id' not in lock.to_dict()
