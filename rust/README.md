@@ -41,7 +41,7 @@ target/release/firewall_console --gateway ubuntu@<nanopi-ip>
 target/release/firewall_console --selftest   # headless: exit 0 if all attacks are caught
 ```
 
-![console](../docs/firewall_console.png)
+![Firewall console dashboard](../docs/dashboard.png)
 
 Console buttons (hover over any of them to see the equivalent CLI command):
 - **Firewall:** Re-arm, Reset counters, live ARMED/LOCKDOWN state, traffic and incident counters.

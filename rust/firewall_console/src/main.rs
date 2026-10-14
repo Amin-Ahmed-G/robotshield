@@ -9,6 +9,7 @@ mod app;
 mod ros;
 mod shell;
 mod state;
+mod theme;
 
 use std::sync::{Arc, Mutex};
 
@@ -82,8 +83,8 @@ fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title("Robot Firewall Console")
-            .with_inner_size([1280.0 * args.zoom, 820.0 * args.zoom])
-            .with_min_inner_size([900.0, 600.0]),
+            .with_inner_size([1440.0 * args.zoom, 900.0 * args.zoom])
+            .with_min_inner_size([1200.0, 760.0]),
         ..Default::default()
     };
     eframe::run_native(
@@ -91,7 +92,7 @@ fn main() -> eframe::Result {
         options,
         Box::new(move |cc| {
             cc.egui_ctx.set_zoom_factor(args.zoom);
-            Ok(Box::new(app::ConsoleApp::new(ros, args.gateway, args.robot_ip)))
+            Ok(Box::new(app::ConsoleApp::new(&cc.egui_ctx, ros, args.gateway, args.robot_ip)))
         }),
     )
 }

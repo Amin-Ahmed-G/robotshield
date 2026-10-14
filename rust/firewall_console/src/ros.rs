@@ -76,11 +76,20 @@ impl RosLink {
         keep.push(Box::new(console.create_subscription::<DiagnosticStatus, _>(
             "/firewall/events".keep_last(100),
             move |m: DiagnosticStatus| {
-                let attack = m.values.iter().find(|kv| kv.key == "attack").map(|kv| kv.value.clone()).unwrap_or_default();
+                let value = |key: &str| m.values.iter().find(|kv| kv.key == key).map(|kv| kv.value.clone()).unwrap_or_default();
+                let row = EventRow {
+                    when: now_hms(),
+                    level: m.level,
+                    attack: value("attack"),
+                    action: value("action"),
+                    source: value("source"),
+                    count: value("count"),
+                    message: m.message.clone(),
+                };
                 let mut s = lock(&s);
                 let t = s.t();
                 s.events_rate.tick(t);
-                s.events.push(EventRow { when: now_hms(), level: m.level, attack, message: m.message });
+                s.events.push(row);
                 let excess = s.events.len().saturating_sub(1000);
                 s.events.drain(..excess);
             },
@@ -93,6 +102,9 @@ impl RosLink {
             let t = s.t();
             s.status_rate.tick(t);
             s.clock_skew_s = json.get("time").and_then(|v| v.as_f64()).map(|g| wall_now() - g);
+            let count = |k: &str| json.get(k).and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let (fwd, dropped) = (count("forwarded"), count("dropped"));
+            s.record_counts(t, fwd, dropped);
             s.status = Some(json);
             s.status_at = Some(Instant::now());
         })?));
@@ -109,6 +121,7 @@ impl RosLink {
                 let peak = pose.iter().fold(0.0_f64, |a, p| a.max(p.abs()));
                 s.max_abs_position = s.max_abs_position.max(peak);
                 s.robot_velocity = names.iter().filter_map(|n| m.velocity.get(index[n]).copied()).collect();
+                s.record_pose(t, &pose);
                 s.robot_pose = Some(pose);
             }
         })?));

@@ -87,7 +87,7 @@ class RobotFirewall:
     """Owns the two nodes and the rule engine; callbacks run on two threads."""
 
     def __init__(self, untrusted_ctx: Context, trusted_ctx: Context,
-                 untrusted_domain: int, trusted_domain: int):
+                 untrusted_domain: int, trusted_domain: int, secure: bool = False):
         # Parameter services are disabled on both sides: configuration comes
         # only from the params file on the gateway, never from the network.
         self.trusted = Node('firewall_gateway', context=trusted_ctx,
@@ -97,6 +97,7 @@ class RobotFirewall:
         self.log = self.untrusted.get_logger()
         self.lock = threading.Lock()
         self.domains = (untrusted_domain, trusted_domain)
+        self.secure = secure
 
         p = self.trusted.declare_parameter
         joint_names = list(p('joint_names', DEFAULT_JOINTS).value)
@@ -329,6 +330,10 @@ class RobotFirewall:
         status['domains'] = {'untrusted': self.domains[0], 'trusted': self.domains[1]}
         status['time'] = self.now()
         status['implementation'] = 'python'
+        status['secure'] = self.secure
+        status['limits'] = {n: [lim.position_min, lim.position_max]
+                            for n, lim in self.core.cfg.limits.items()
+                            if n in self.core.cfg.joint_names}
         self.status_pub.publish(String(data=json.dumps(status)))
         level = 'ERROR' if status['mode'] == fw.LOCKDOWN else 'OK'
         message = status['lockdown_reason'] if level == 'ERROR' else 'armed, forwarding'
@@ -375,7 +380,7 @@ def main(args=None):
     untrusted_ctx = init_context(opts.untrusted_domain, opts.enclave, ['firewall_node'])
 
     firewall = RobotFirewall(untrusted_ctx, trusted_ctx,
-                             opts.untrusted_domain, opts.trusted_domain)
+                             opts.untrusted_domain, opts.trusted_domain, bool(opts.enclave))
     executors = []
     for node, ctx in ((firewall.trusted, trusted_ctx), (firewall.untrusted, untrusted_ctx)):
         executor = SingleThreadedExecutor(context=ctx)

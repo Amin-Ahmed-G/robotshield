@@ -18,7 +18,7 @@ There are two gateway implementations: a **Rust** one in [`rust/`](rust/README.m
 (the default for deployment; adds per-message publisher filtering and a GUI
 console) and the original **Python** package. They share topics, params and formats.
 
-![console](docs/firewall_console.png)
+![Firewall console dashboard](docs/dashboard.png)
 
 ## Results
 

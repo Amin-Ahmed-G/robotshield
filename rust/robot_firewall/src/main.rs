@@ -186,6 +186,8 @@ impl RobotPublisher {
 struct Firewall {
     params: Params,
     domains: (usize, usize),
+    /// SROS2 enforced on the untrusted (laptop) side.
+    secure: bool,
     core: Mutex<CommandFirewall>,
     untrusted: Node,
     trusted: Node,
@@ -469,6 +471,15 @@ impl Firewall {
         json["domains"] = serde_json::json!({"untrusted": self.domains.0, "trusted": self.domains.1});
         json["time"] = serde_json::json!(self.now());
         json["implementation"] = serde_json::json!("rust");
+        json["secure"] = serde_json::json!(self.secure);
+        let limits: serde_json::Map<String, serde_json::Value> = {
+            let core = self.core.lock().unwrap();
+            core.cfg.joint_names.iter().map(|n| {
+                let l = core.cfg.limits[n];
+                (n.clone(), serde_json::json!([l.position_min, l.position_max]))
+            }).collect()
+        };
+        json["limits"] = serde_json::Value::Object(limits);
         let _ = self.status_pub.publish(StringMsg { data: json.to_string() });
 
         let locked = status.mode == fw::LOCKDOWN;
@@ -536,6 +547,7 @@ fn run() -> Result<(), String> {
     let fw = Arc::new(Firewall {
         core: Mutex::new(CommandFirewall::new(params.firewall_config())),
         domains: (args.untrusted_domain, args.trusted_domain),
+        secure: !args.enclave.is_empty(),
         robot_pub,
         state_relay: untrusted.create_publisher(params.state_topic.as_str()).map_err(err)?,
         events_pub: untrusted.create_publisher("/firewall/events".keep_last(50)).map_err(err)?,

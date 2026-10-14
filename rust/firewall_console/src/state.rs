@@ -1,5 +1,6 @@
 //! State shared between the UI thread, the ROS executor and worker threads.
 
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
@@ -27,6 +28,10 @@ pub struct EventRow {
     pub level: u8,
     pub attack: String,
     pub message: String,
+    /// FORWARDED / CLAMPED / DROPPED / ALERTED ('' for REARM etc.)
+    pub action: String,
+    pub source: String,
+    pub count: String,
 }
 
 #[derive(Clone, PartialEq)]
@@ -73,7 +78,16 @@ pub struct Shared {
     pub selftest_running: bool,
     // Console output
     pub log: Vec<LogLine>,
+    // Chart history (t = seconds since console start)
+    /// Robot joint positions, decimated to ~20 Hz, last HISTORY_S seconds.
+    pub pose_history: VecDeque<(f64, Vec<f64>)>,
+    /// (t, forwarded msgs/s, dropped msgs/s) from successive status messages.
+    pub traffic_history: VecDeque<(f64, f64, f64)>,
+    last_counts: Option<(f64, f64, f64)>,
 }
+
+/// Seconds of history shown in the live charts.
+pub const HISTORY_S: f64 = 30.0;
 
 impl Shared {
     pub fn new(joint_names: Vec<String>) -> Self {
@@ -101,6 +115,38 @@ impl Shared {
             selftest: Vec::new(),
             selftest_running: false,
             log: Vec::new(),
+            pose_history: VecDeque::new(),
+            traffic_history: VecDeque::new(),
+            last_counts: None,
+        }
+    }
+
+    pub fn record_pose(&mut self, t: f64, pose: &[f64]) {
+        if self.pose_history.back().is_some_and(|(last, _)| t - last < 0.05) {
+            return;
+        }
+        self.pose_history.push_back((t, pose.to_vec()));
+        while self.pose_history.front().is_some_and(|(t0, _)| t - t0 > HISTORY_S) {
+            self.pose_history.pop_front();
+        }
+    }
+
+    /// Turn cumulative forwarded/dropped counters into per-second rates.
+    pub fn record_counts(&mut self, t: f64, forwarded: f64, dropped: f64) {
+        if let Some((t0, f0, d0)) = self.last_counts {
+            let dt = t - t0;
+            if dt > 0.2 {
+                // Counters reset (Reset button / gateway restart) -> treat as zero.
+                let fr = ((forwarded - f0) / dt).max(0.0);
+                let dr = ((dropped - d0) / dt).max(0.0);
+                self.traffic_history.push_back((t, fr, dr));
+            } else {
+                return;
+            }
+        }
+        self.last_counts = Some((t, forwarded, dropped));
+        while self.traffic_history.front().is_some_and(|(t0, _, _)| t - t0 > HISTORY_S) {
+            self.traffic_history.pop_front();
         }
     }
 
